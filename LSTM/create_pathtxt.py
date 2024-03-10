@@ -1,8 +1,8 @@
 import os
 
-dir = '/Users/rhine_e/Downloads/CrossPatternData/LSTM/training_data'
+dir = '/Users/rhine_e/Downloads/CrossPatternData/multicomponent-spray-prediction/LSTM/training_data'
 fp = open('./img_path.txt','w+')
-imgfile_list = os.listdir('/Users/rhine_e/Downloads/CrossPatternData/LSTM/training_data')
+imgfile_list = os.listdir('/Users/rhine_e/Downloads/CrossPatternData/multicomponent-spray-prediction/LSTM/training_data')
 imgfile_list.sort(key= lambda x:int(x[:]))
 # print(imgfile_list)
 seqsize = 16
@@ -17,6 +17,6 @@ for imgfile in imgfile_list:
        img = img_list[i]
        path = os.path.join(filepath, img)
        fp.write(path+' ')
-    fp.write(path+'\n')
+    fp.write('\n')
 
 fp.close()
