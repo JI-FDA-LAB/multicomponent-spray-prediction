@@ -10,7 +10,7 @@ from torch.autograd import Variable
 from torchvision.utils import save_image
 from torchvision.transforms import Resize
 
-BATCH_SIZE = 100
+BATCH_SIZE = 30
 SEQ_SIZE = 15
 learning_rate = 0.01
 PATH_SAVE = './model/lstm_model.t7'
