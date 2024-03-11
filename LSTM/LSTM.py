@@ -10,7 +10,7 @@ from torch.autograd import Variable
 from torchvision.utils import save_image
 from torchvision.transforms import Resize
 
-BATCH_SIZE = 10
+BATCH_SIZE = 50
 SEQ_SIZE = 15
 learning_rate = 0.01
 PATH_SAVE = './model/lstm_model.t7'
@@ -231,8 +231,8 @@ if __name__ == '__main__':
     loss_func = nn.MSELoss() # The mean squared error loss is used.
 
     inputs, label = next(iter(train_loader))
-    # inputs, label =  inputs.contiguous(), label.contiguous()
     # This line gets the first batch of data from the train_loader
+
     print(inputs.size())
     print(label.size())
 
@@ -243,7 +243,7 @@ if __name__ == '__main__':
         #count = 1
         for batch_x, batch_y in train_loader:
 
-            inputs, label = Variable(batch_x), Variable(batch_y)
+            inputs, label = Variable(batch_x).cuda(), Variable(batch_y).cuda()
             # This line wraps the input and target data in Variable objects.
             # This is a requirement for computation with PyTorch.
 
@@ -254,7 +254,7 @@ if __name__ == '__main__':
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-            print('Loss: {:.4f}',format(loss.data.cpu().numpy()))
+            print('Loss: {:.4f}'.format(loss.data.cpu().numpy()))
 
         print('epoch: {}, Loss: {:.4f}'.format(epoch + 1, loss.data.cpu().numpy()))
 
