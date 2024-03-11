@@ -16,6 +16,7 @@ learning_rate = 0.01
 PATH_SAVE = './model/lstm_model.t7'
 # Notice thta .t7 is an extension associated with Torch.
 
+
 transform_list = [
     Resize((1024, 1024)),
     transforms.ToTensor()
@@ -67,6 +68,8 @@ class SeqDataset(Dataset):
         current_label = self.transform(current_label)
         #print(current_label.shape)
         batch_cur_imgs = np.stack(current_imgs, axis=0)
+        # batch_cur_imgs = torch.from_numpy(np.stack(current_imgs, axis=0)).contiguous()
+
         return batch_cur_imgs, current_label
 
     def __len__(self):
@@ -246,6 +249,7 @@ if __name__ == '__main__':
     loss_func = nn.MSELoss() # The mean squared error loss is used.
 
     inputs, label = next(iter(train_loader))
+    # inputs, label =  inputs.contiguous(), label.contiguous()
     # This line gets the first batch of data from the train_loader
     print(inputs.size())
     print(label.size())
@@ -257,14 +261,16 @@ if __name__ == '__main__':
         #count = 1
         for batch_x, batch_y in train_loader:
 
-            inputs, label = Variable(batch_x), Variable(batch_y)
+            inputs, label = Variable(batch_x).cuda(), Variable(batch_y).cuda()
+            print('inputs: ' + str(inputs.is_contiguous()))
+            print('label: ' + str(label.is_contiguous()))
             # This line wraps the input and target data in Variable objects.
             # This is a requirement for computation with PyTorch.
 
             output = model(inputs)
-            print(output.size())
-            print(inputs.size())
-            print(label.size())
+            print('output size' + str(output.size()))
+            print(output.is_contiguous())
+
             loss = loss_func(output, label)/label.shape[0]
             optimizer.zero_grad()
             loss.backward()
