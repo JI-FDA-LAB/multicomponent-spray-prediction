@@ -10,11 +10,11 @@ from torch.autograd import Variable
 from torchvision.utils import save_image
 from torchvision.transforms import Resize
 
-BATCH_SIZE = 50
-SEQ_SIZE = 15
-learning_rate = 0.01
+BATCH_SIZE = 60
+SEQ_SIZE = 5
+learning_rate = 0.001
 PATH_SAVE = './model/lstm_model.t7'
-SIDE = 256
+SIDE = 512
 # Notice thta .t7 is an extension associated with Torch.
 
 
@@ -117,6 +117,10 @@ class EncoderMUG2d_LSTM(nn.Module):
             nn.BatchNorm2d(512),
             nn.LeakyReLU(0.2, inplace=True),
 
+            nn.Conv2d(512, 512, 4, 2, 1), # 512 * 2 * 2
+            nn.BatchNorm2d(512),
+            nn.LeakyReLU(0.2, inplace=True),
+
             nn.Conv2d(512, 1024, 4, 2, 1), # 1024 * 1 * 1
             nn.BatchNorm2d(1024),
             nn.LeakyReLU(0.2, inplace=True),
@@ -190,7 +194,11 @@ class DecoderMUG2d(nn.Module):
             nn.BatchNorm2d(16),
             nn.ReLU(True),
 
-            nn.ConvTranspose2d(16, output_nc, 3, stride=1, padding=1),  # 1*256*256
+            nn.ConvTranspose2d(16, 8, 4, stride=2, padding=1),  # 16*512*512
+            nn.BatchNorm2d(8),
+            nn.ReLU(True),
+
+            nn.ConvTranspose2d(8, output_nc, 3, stride=1, padding=1),  # 1*512*512
             nn.Sigmoid(),
         )
     def forward(self, x):
@@ -236,35 +244,38 @@ if __name__ == '__main__':
     print(inputs.size())
     print(label.size())
 
-    for epoch in range(10):
-        print('epoch {}'.format(epoch + 1))
-        train_loss = 0.
-        train_acc = 0.
-        #count = 1
-        for batch_x, batch_y in train_loader:
+    with open('loss_log.txt', 'w') as f:
+        for epoch in range(40):
+            print('epoch {}'.format(epoch + 1))
+            train_loss = 0.
+            train_acc = 0.
+            #count = 1
+            for batch_idx, (batch_x, batch_y) in enumerate(train_loader):
 
-            inputs, label = Variable(batch_x).cuda(), Variable(batch_y).cuda()
-            # This line wraps the input and target data in Variable objects.
-            # This is a requirement for computation with PyTorch.
+                inputs, label = Variable(batch_x).cuda(), Variable(batch_y).cuda()
+                # This line wraps the input and target data in Variable objects.
+                # This is a requirement for computation with PyTorch.
 
-            output = model(inputs)
-            print('output size: ' + str(output.size()))
+                output = model(inputs)
 
-            loss = loss_func(output, label)/label.shape[0]
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
-            print('Loss: {:.4f}'.format(loss.data.cpu().numpy()))
+                loss = loss_func(output, label)/label.shape[0]
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
+                print('Epoch: {}, Batch: {}, Loss: {:.6f}'.format(epoch + 1, batch_idx + 1, loss.data.cpu().numpy()))
+                # Write the loss for this batch to the log file
+                f.write('Epoch: {}, Bathc: {}, Loss: {:.6f}\n'.format(epoch + 1, batch_idx + 1, loss.data.cpu().numpy()))
 
-        print('epoch: {}, Loss: {:.4f}'.format(epoch + 1, loss.data.cpu().numpy()))
+            print('Epoch: {}, Loss: {:.6f}'.format(epoch + 1, loss.data.cpu().numpy()))
+            f.write('Epoch: {}, Loss: {:.6f}\n'.format(epoch + 1, loss.data.cpu().numpy()))
 
-        if (epoch + 1) % 5 == 0:  # 每 5 次，保存一下解码的图片和原图片
-            pic = to_img(output.cpu().data)
-            img = to_img(label.cpu().data)
-            if not os.path.exists('./conv_autoencoder'):
-                os.mkdir('./conv_autoencoder')
-            save_image(pic, './conv_autoencoder/decode_image_{}.png'.format(epoch + 1))
-            save_image(img, './conv_autoencoder/raw_image_{}.png'.format(epoch + 1))
-        #count = count +1
+            if (epoch + 1) % 5 == 0:  # 每 5 次，保存一下解码的图片和原图片
+                pic = to_img(output.cpu().data)
+                img = to_img(label.cpu().data)
+                if not os.path.exists('./conv_autoencoder'):
+                    os.mkdir('./conv_autoencoder')
+                save_image(pic, './conv_autoencoder/decode_image_{}.png'.format(epoch + 1))
+                save_image(img, './conv_autoencoder/raw_image_{}.png'.format(epoch + 1))
+            #count = count +1
 
-    torch.save(model.state_dict(), PATH_SAVE)
+        torch.save(model.state_dict(), PATH_SAVE)
