@@ -3,6 +3,7 @@ import os
 import torch.nn as nn
 import numpy as np
 import torch.optim as optim
+from torch.utils.tensorboard import SummaryWriter
 from PIL import Image
 from torch.utils.data import Dataset, DataLoader
 from torchvision import  transforms
@@ -15,6 +16,7 @@ SEQ_SIZE = 4
 learning_rate = 0.001
 PATH_SAVE = './model/lstm_model.t7'
 SIDE = 512
+writer = SummaryWriter()
 # Notice thta .t7 is an extension associated with Torch.
 
 
@@ -229,7 +231,7 @@ if __name__ == '__main__':
     # The DataLoader is a PyTorch utility for loading data in parallel.
     # It divides the data into batches of size BATCH_SIZE, shuffle the data
     # And uses 4 worker processes to load the data
-    train_loader = DataLoader(train_data, shuffle=True, num_workers=8, batch_size=BATCH_SIZE)
+    train_loader = DataLoader(train_data, shuffle=True, num_workers=8, batch_size=BATCH_SIZE, drop_last=True)
 
     model = net()
     if torch.cuda.is_available(): # moves the model to the GPU if one is available.
@@ -244,38 +246,42 @@ if __name__ == '__main__':
     print(inputs.size())
     print(label.size())
 
-    with open('loss_log.txt', 'w') as f:
-        for epoch in range(40):
-            print('epoch {}'.format(epoch + 1))
-            train_loss = 0.
-            train_acc = 0.
-            #count = 1
-            for batch_idx, (batch_x, batch_y) in enumerate(train_loader):
+    # with open('loss_log.txt', 'w') as f:
+    for epoch in range(2):
+        __loss = 0
+        print('epoch {}'.format(epoch + 1))
+        train_loss = []
+        train_acc = 0.
+        #count = 1
+        for batch_idx, (batch_x, batch_y) in enumerate(train_loader):
 
-                inputs, label = Variable(batch_x).cuda(), Variable(batch_y).cuda()
-                # This line wraps the input and target data in Variable objects.
-                # This is a requirement for computation with PyTorch.
+            inputs, label = Variable(batch_x), Variable(batch_y)
+            # This line wraps the input and target data in Variable objects.
+            # This is a requirement for computation with PyTorch.
 
-                output = model(inputs)
+            output = model(inputs)
 
-                loss = loss_func(output, label)/label.shape[0]
-                optimizer.zero_grad()
-                loss.backward()
-                optimizer.step()
-                print('Epoch: {}, Batch: {}, Loss: {:.6f}'.format(epoch + 1, batch_idx + 1, loss.data.cpu().numpy()))
-                # Write the loss for this batch to the log file
-                f.write('Epoch: {}, Bathc: {}, Loss: {:.6f}\n'.format(epoch + 1, batch_idx + 1, loss.data.cpu().numpy()))
+            loss = loss_func(output, label)/label.shape[0]
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+            __loss += loss.item()
+            writer.add_scalar('Loss/train', __loss, epoch)
+            print('Epoch: {}, Batch: {}, Loss: {:.6f}'.format(epoch + 1, batch_idx + 1, loss.data.cpu().numpy()))
+            # Write the loss for this batch to the log file
+            # f.write('Epoch: {}, Bathc: {}, Loss: {:.6f}\n'.format(epoch + 1, batch_idx + 1, loss.data.cpu().numpy()))
 
-            print('Epoch: {}, Loss: {:.6f}'.format(epoch + 1, loss.data.cpu().numpy()))
-            f.write('Epoch: {}, Loss: {:.6f}\n'.format(epoch + 1, loss.data.cpu().numpy()))
+        print('Epoch: {}, Loss: {:.6f}'.format(epoch + 1, loss.data.cpu().numpy()))
+        # f.write('Epoch: {}, Loss: {:.6f}\n'.format(epoch + 1, loss.data.cpu().numpy()))
 
-            if (epoch + 1) % 5 == 0:  # 每 5 次，保存一下解码的图片和原图片
-                pic = to_img(output.cpu().data)
-                img = to_img(label.cpu().data)
-                if not os.path.exists('./conv_autoencoder'):
-                    os.mkdir('./conv_autoencoder')
-                save_image(pic, './conv_autoencoder/decode_image_{}.png'.format(epoch + 1))
-                save_image(img, './conv_autoencoder/raw_image_{}.png'.format(epoch + 1))
-            #count = count +1
+        if (epoch + 1) % 5 == 0:  # 每 5 次，保存一下解码的图片和原图片
+            pic = to_img(output.cpu().data)
+            img = to_img(label.cpu().data)
+            if not os.path.exists('./conv_autoencoder'):
+                os.mkdir('./conv_autoencoder')
+            save_image(pic, './conv_autoencoder/decode_image_{}.png'.format(epoch + 1))
+            save_image(img, './conv_autoencoder/raw_image_{}.png'.format(epoch + 1))
+        #count = count +1
 
-        torch.save(model.state_dict(), PATH_SAVE)
+    writer.close()
+    torch.save(model.state_dict(), PATH_SAVE)
