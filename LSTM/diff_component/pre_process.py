@@ -30,6 +30,8 @@ def apply_threshold_and_separate_contour(input_path, output_path):
             _, binary_mask = cv2.threshold(img, threshold_value, 255, cv2.THRESH_BINARY)
 
             thresholded_image = cv2.bitwise_and(img, binary_mask)
+            max_intensity = thresholded_image.max()
+            min_intensity = thresholded_image.min()
 
             # Save image with overall centroid marker
             cv2.imwrite(os.path.join(output_path, filename), thresholded_image)

@@ -7,3 +7,6 @@
 
 # ignore itself
 .gitignore
+
+# ignore other experiments
+15-16/

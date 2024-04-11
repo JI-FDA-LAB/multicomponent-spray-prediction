@@ -3,10 +3,10 @@ import shutil
 import glob
 
 # Define the directory where the images are located
-image_dir = '/Users/rhine_e/Downloads/CrossPatternData/training-set-backup'
+image_dir = './test-set'
 
 # Define the directory where the sorted images will be stored
-output_dir = './sorted_images'
+output_dir = './sorted_test'
 
 A, B, C, D, E, F, G, H, I, J, K, L = (0,0.5,0.5),(0.125,0.5,0.375),(0.25,0.5,0.25),(0.375,0.5,0.125),(0.5,0.5,0),(0.5,0.375,0.125),(0.5,0.25,0.25),(0.5,0.125,0.375),(0.5,0,0.5),(0.375,0.125,0.5),(0.25,0.25,0.5),(0.125,0.375,0.5)
 
@@ -79,8 +79,8 @@ for old, new in folder_mapping.items():
     old_folder_path = os.path.join(output_dir, old)
     new_folder_path = os.path.join(output_dir, new)
 
-    # Check if the new folder path exists
+    # Check if the new folder name already exists
     if not os.path.exists(new_folder_path):
         os.rename(old_folder_path, new_folder_path)
     else:
-        print(f"Cannot rename {old_folder_path} to {new_folder_path} because the latter already exists.")
+        print(f"Cannot rename {old_folder_path} to {new_folder_path} because the new folder name already exists.")

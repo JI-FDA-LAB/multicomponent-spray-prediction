@@ -11,7 +11,7 @@ from torch.autograd import Variable
 from torchvision.utils import save_image
 from torchvision.transforms import Resize
 
-BATCH_SIZE = 30
+BATCH_SIZE = 72
 SEQ_SIZE = 4
 learning_rate = 0.001
 PATH_SAVE = './model/lstm_model.t7'
@@ -36,6 +36,10 @@ def to_img(x):
     x = x.view(x.shape[0], 1, SIDE, SIDE) # Reshape to (batch_size, channels, height, width)
     # Here x.shape[0] is used to maintain the original batch size when reshaping the tensor
     # which allows the fcn to handle batches of images of any size.
+    return x
+
+def to_origin(x):
+    x = x * 2 - 1
     return x
 
 class SeqDataset(Dataset):
@@ -247,7 +251,7 @@ if __name__ == '__main__':
     print(label.size())
 
     # with open('loss_log.txt', 'w') as f:
-    for epoch in range(10):
+    for epoch in range(1):
         __loss = 0
         print('epoch {}'.format(epoch + 1))
         train_loss = []
@@ -265,6 +269,10 @@ if __name__ == '__main__':
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
+
+            # Make the output to fit the original scaling
+            # output = to_origin(output)
+
             __loss += loss.item()
             writer.add_scalar('Loss/train', __loss, epoch)
             print('Epoch: {}, Batch: {}, Loss: {:.6f}'.format(epoch + 1, batch_idx + 1, loss.data.cpu().numpy()))
@@ -274,14 +282,13 @@ if __name__ == '__main__':
         print('Epoch: {}, Loss: {:.6f}'.format(epoch + 1, loss.data.cpu().numpy()))
         # f.write('Epoch: {}, Loss: {:.6f}\n'.format(epoch + 1, loss.data.cpu().numpy()))
 
-        if (epoch + 1) % 5 == 0:  # 每 5 次，保存一下解码的图片和原图片
+        if (epoch + 1) % 1 == 0:  # 每 5 次，保存一下解码的图片和原图片
             pic = to_img(output.cpu().data)
             img = to_img(label.cpu().data)
             if not os.path.exists('./conv_autoencoder'):
                 os.mkdir('./conv_autoencoder')
             save_image(pic, './conv_autoencoder/decode_image_{}.png'.format(epoch + 1))
             save_image(img, './conv_autoencoder/raw_image_{}.png'.format(epoch + 1))
-        #count = count +1
 
     writer.close()
     torch.save(model.state_dict(), PATH_SAVE)
@@ -306,10 +313,25 @@ if __name__ == '__main__':
             output_imgs = to_img(outputs.cpu().data)
             label_imgs = to_img(labels.cpu().data)
 
-            # Create a directory to save the images, if it doesn't exist
-            if not os.path.exists('./test_results'):
-                os.mkdir('./test_results')
+            # Save each output image and label individually
+            for j in range(output_imgs.size(0)):
+                output_img = output_imgs[j, ...]
+                label_img = label_imgs[j, ...]
 
-            # Save the output images and the corresponding labels
-            save_image(output_imgs, './test_results/output_image_{}.png'.format(i + 1))
-            save_image(label_imgs, './test_results/label_image_{}.png'.format(i + 1))
+                # Create a directory to save the images if it doesn't exist
+                output_dir = './test_results/output_image_{}/'.format(i + 1)
+                os.makedirs(output_dir, exist_ok=True)
+
+                # Save the output image and the corresponding label
+                save_image(output_img, os.path.join(output_dir, 'output_image_{}.png'.format(j + 1)))
+                save_image(label_img, os.path.join(output_dir, 'label_image_{}.png'.format(j + 1)))
+
+
+
+            # # Create a directory to save the images, if it doesn't exist
+            # if not os.path.exists('./test_results'):
+            #     os.mkdir('./test_results')
+
+            # # Save the output images and the corresponding labels
+            # save_image(output_imgs, './test_results/output_image_{}.png'.format(i + 1))
+            # save_image(label_imgs, './test_results/label_image_{}.png'.format(i + 1))
