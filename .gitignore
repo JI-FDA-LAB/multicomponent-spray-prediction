@@ -9,4 +9,9 @@
 .gitignore
 
 # ignore other experiments
-15-16/
+*results/
+
+# ignore python files for creating sets and find the tip
+findCenter.py
+create_test_set.py
+threshold.py
