@@ -1,2 +1,9 @@
-/LSTM/training_data/**
+# ignore all the image files and txt files
+*.png
+*.txt
+
+# ignore file generated on mac
 .DS_Store
+
+# ignore itself
+.gitignore
