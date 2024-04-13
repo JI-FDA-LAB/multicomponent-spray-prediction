@@ -15,3 +15,4 @@
 findCenter.py
 create_test_set.py
 threshold.py
+classify_images.py
