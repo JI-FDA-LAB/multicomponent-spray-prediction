@@ -5,19 +5,17 @@ import numpy as np
 MASK = 0.1
 
 def calculate_parameters(input_path):
-    total_images = 0
     with open(os.path.join(input_path, "d.txt"), "w") as file:
         for filename in os.listdir(input_path):
             if filename.endswith('.png') or filename.endswith('.jpg'):
-                total_images += 1
+
                 # Thresholding to distinguish spray from background
                 image = cv2.imread(os.path.join(input_path, filename), cv2.IMREAD_GRAYSCALE)
                 if image is None:
                     print(f"Error loading image: {os.path.join(input_path, filename)}")
                     continue
+
                 max_intensity = image.max()
-                min_intensity = image.min()
-                # print(filename + " max intensity is: {}, min intensity is: {}.\n".format(max_intensity, min_intensity))
                 threshold_value = int(max_intensity * MASK)
                 _, binary_mask = cv2.threshold(image, threshold_value, 255, cv2.THRESH_BINARY)
 
@@ -31,27 +29,7 @@ def calculate_parameters(input_path):
                 distances_to_tip = np.sqrt((x_coords - injector_tip_position[0])**2 + (y_coords - injector_tip_position[1])**2)
                 d = np.sum(thresholded_image * distances_to_tip) / np.sum(thresholded_image)
 
-                # Calculate spray cross-pattern area (Ac)
-                contours, _ = cv2.findContours(binary_mask.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-                total_area = sum(cv2.contourArea(contour) for contour in contours)
-
-                # Visualize plume-to-tip distance (d) with a horizontal line
-                image_with_line = cv2.cvtColor(thresholded_image, cv2.COLOR_GRAY2BGR)  # Convert image to color (BGR) format
-                d_x = d * 0.788
-                d_y = -d * 0.616
-                line_x = int(round(d_x))
-                line_y = int(round(d_y))
-                # line_length = int(round(d))
-                cv2.line(image_with_line, (injector_tip_position[0], injector_tip_position[1]), (injector_tip_position[0] + line_x, injector_tip_position[1] + line_y), (0, 0, 255), 2)  # Draw red line
-                cv2.circle(image_with_line, (injector_tip_position[0], injector_tip_position[1]), 5, (0, 255, 255), -1)  # Draw yellwo dot
-                cv2.circle(image_with_line, (injector_tip_position[0] + line_x, injector_tip_position[1] + line_y), 5, (0, 255, 255), -1)
-
-                # Save or display the image with the line
-                # cv2.imwrite(os.path.join(input_path, f"{filename}_with_line.png"), image_with_line)
-
                 file.write(f"{filename} Plume-to-tip distance (d): {d}\n")
-                # file.write(f"{filename} Spray cross-pattern area (Ac): {total_area}\n")
-    # print(f"Total images processed: {total_images}")
 
 # Function to read lines from a text file
 def read_lines_from_file(file_path):
@@ -67,8 +45,8 @@ def sort_key(line):
     return number
 
 
-# image_path = './3-group-test-results/5/EIG_predict_threshold'
-image_path = './3-group-test-results/5/EIG_0.0001_500_threshold/test_results'
+image_path = './result/interpolation/AEC_prediction'
+# image_path = './result/extrapolation/ABCDE_prediction'
 calculate_parameters(image_path)
 
 lines = read_lines_from_file(os.path.join(image_path,'d.txt'))
