@@ -1,7 +1,7 @@
 import os
 import torch
 from torchvision.utils import save_image
-from LSTM_Comp import net, SeqDataset, to_img, Variable
+from LSTM_training import net, SeqDataset, to_img, Variable
 from torch.utils.data import DataLoader
 from torchvision import transforms
 from torchvision.transforms import Resize

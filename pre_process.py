@@ -38,7 +38,7 @@ def apply_threshold_and_separate_contour(input_path, output_path):
 
 
 # Example usage
-input_dir = '/Users/rhine_e/Downloads/CrossPatternData/test-set'
-output_dir = '/Users/rhine_e/Downloads/CrossPatternData/thresholded-test-set'
+input_dir = '/Users/rhine_e/Downloads/CrossPatternData/training-set'
+output_dir = '/Users/rhine_e/Downloads/CrossPatternData/thresholded-training-set'
 
 apply_threshold_and_separate_contour(input_dir, output_dir)

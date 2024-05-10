@@ -12,7 +12,7 @@ from torchvision.utils import save_image
 from torchvision.transforms import Resize
 
 BATCH_SIZE = 72
-SEQ_SIZE = 4
+SEQ_SIZE = 2
 learning_rate = 0.001
 PATH_SAVE = './model/lstm_model.t7'
 SIDE = 512
@@ -92,34 +92,34 @@ class EncoderMUG2d_LSTM(nn.Module):
         self.lstm_hidden_size = lstm_hidden_size
         #1*SIDE*SIDE
         self.encoder = nn.Sequential(
-            nn.Conv2d(input_nc, 32, 4,2,1), # 32 * 128 * 128
+            nn.Conv2d(input_nc, 32, 4,2,1), # 32 * 256 * 256
             # This is a 2D convolutional layer. It takes an input with input_nc channels and applies 32 filters of size 4x4.
             # The stride is 2 (meaning the filters move 2 pixels at a time), and the padding is 1 (meaning the input is zero-padded by 1 pixel on each side).
             # The output of this layer will have 32 channels.
             nn.BatchNorm2d(32),
             nn.LeakyReLU(0.2, inplace=True),
             #32*63*63
-            nn.Conv2d(32, 64, 4, 2, 1), # 64 * 64 * 64
+            nn.Conv2d(32, 64, 4, 2, 1), # 64 * 128 * 128
             nn.BatchNorm2d(64),
             nn.LeakyReLU(0.2, inplace=True),
             #64*31*31
-            nn.Conv2d(64, 128, 4, 2, 1), # 128 * 32 * 32
+            nn.Conv2d(64, 128, 4, 2, 1), # 128 * 64 * 64
             nn.BatchNorm2d(128),
             nn.LeakyReLU(0.2, inplace=True),
 
-            nn.Conv2d(128, 256, 4, 2, 1), # 256 * 16 * 16
+            nn.Conv2d(128, 256, 4, 2, 1), # 256 * 32 * 32
             nn.BatchNorm2d(256),
             nn.LeakyReLU(0.2, inplace=True),
 
-            nn.Conv2d(256, 512, 4, 2, 1), # 512 * 8 * 8
+            nn.Conv2d(256, 512, 4, 2, 1), # 512 * 16 * 16
+            nn.BatchNorm2d(512),
+            nn.LeakyReLU(0.2, inplace=True),
+
+            nn.Conv2d(512, 512, 4, 2, 1), # 512 * 8 * 8
             nn.BatchNorm2d(512),
             nn.LeakyReLU(0.2, inplace=True),
 
             nn.Conv2d(512, 512, 4, 2, 1), # 512 * 4 * 4
-            nn.BatchNorm2d(512),
-            nn.LeakyReLU(0.2, inplace=True),
-
-            nn.Conv2d(512, 512, 4, 2, 1), # 512 * 2 * 2
             nn.BatchNorm2d(512),
             nn.LeakyReLU(0.2, inplace=True),
 
