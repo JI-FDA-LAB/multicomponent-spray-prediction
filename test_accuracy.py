@@ -4,6 +4,7 @@ import numpy as np
 
 MASK = 0.1
 
+# Write the plume-to-tip distance in "d.txt" file
 def calculate_parameters(input_path):
     with open(os.path.join(input_path, "d.txt"), "w") as file:
         for filename in os.listdir(input_path):

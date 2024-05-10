@@ -30,7 +30,6 @@ def calculate_d(image):
 
 # Calculate the relative error between the input images and the label image
 # The commented line is for extrapolation case
-
 def calculate_parameters(input_path, num_images=3):
 # def calculate_parameters(input_path, num_images=5):
     errors = [[] for _ in range(num_images - 1)]
