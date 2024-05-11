@@ -3,7 +3,6 @@ import os
 import torch.nn as nn
 import numpy as np
 import torch.optim as optim
-from torch.utils.tensorboard import SummaryWriter
 from PIL import Image
 from torch.utils.data import Dataset, DataLoader
 from torchvision import  transforms
@@ -12,13 +11,10 @@ from torchvision.utils import save_image
 from torchvision.transforms import Resize
 
 BATCH_SIZE = 72
-SEQ_SIZE = 2
+SEQ_SIZE = 4
 learning_rate = 0.001
-PATH_SAVE = './model/lstm_model.t7'
+PATH_SAVE = './model/octane-fixed-extra-model.t7'
 SIDE = 512
-writer = SummaryWriter()
-# Notice thta .t7 is an extension associated with Torch.
-
 
 transform_list = [
     Resize((SIDE, SIDE)),
@@ -31,15 +27,9 @@ def default_loader(path):
     return Image.open(path)
 
 def to_img(x):
-    x = 0.5 * (x + 1.)  # Rescale -1~1 to 0~1
-    x = x.clamp(0, 1) # Ensure values are within 0~1
     x = x.view(x.shape[0], 1, SIDE, SIDE) # Reshape to (batch_size, channels, height, width)
     # Here x.shape[0] is used to maintain the original batch size when reshaping the tensor
     # which allows the fcn to handle batches of images of any size.
-    return x
-
-def to_origin(x):
-    x = x * 2 - 1
     return x
 
 class SeqDataset(Dataset):
@@ -73,9 +63,7 @@ class SeqDataset(Dataset):
                 img = self.transform(img)
             current_imgs.append(img)
         current_label = self.transform(current_label)
-        #print(current_label.shape)
         batch_cur_imgs = np.stack(current_imgs, axis=0)
-        # batch_cur_imgs = torch.from_numpy(np.stack(current_imgs, axis=0)).contiguous()
 
         return batch_cur_imgs, current_label
 
@@ -225,16 +213,9 @@ class net(nn.Module):
         output = self.n2(output) #B*1*SIDE*SIDE
         return output
 
-# The if __name__ == '__main__': line is a common Python idiom.
-# In Python, __name__ is a special variable. When you run a Python file directly,
-# __name__ is set to '__main__'. But if you import the file as a module in another script,
-# __name__ is set to the name of that file (without the .py).
 if __name__ == '__main__':
-    train_data = SeqDataset(txt='./training_img_path.txt',transform=data_transforms)
+    train_data = SeqDataset(txt='./path/octane-fixed-extra-training-path.txt',transform=data_transforms)
 
-    # The DataLoader is a PyTorch utility for loading data in parallel.
-    # It divides the data into batches of size BATCH_SIZE, shuffle the data
-    # And uses 4 worker processes to load the data
     train_loader = DataLoader(train_data, shuffle=True, num_workers=8, batch_size=BATCH_SIZE, drop_last=True)
 
     model = net()
@@ -245,18 +226,15 @@ if __name__ == '__main__':
     loss_func = nn.MSELoss() # The mean squared error loss is used.
 
     inputs, label = next(iter(train_loader))
-    # This line gets the first batch of data from the train_loader
 
     print(inputs.size())
     print(label.size())
 
-    # with open('loss_log.txt', 'w') as f:
-    for epoch in range(1):
+    for epoch in range(300):
         __loss = 0
         print('epoch {}'.format(epoch + 1))
         train_loss = []
         train_acc = 0.
-        #count = 1
         for batch_idx, (batch_x, batch_y) in enumerate(train_loader):
 
             inputs, label = Variable(batch_x), Variable(batch_y)
@@ -270,34 +248,24 @@ if __name__ == '__main__':
             loss.backward()
             optimizer.step()
 
-            # Make the output to fit the original scaling
-            # output = to_origin(output)
-
             __loss += loss.item()
-            writer.add_scalar('Loss/train', __loss, epoch)
             print('Epoch: {}, Batch: {}, Loss: {:.6f}'.format(epoch + 1, batch_idx + 1, loss.data.cpu().numpy()))
-            # Write the loss for this batch to the log file
-            # f.write('Epoch: {}, Bathc: {}, Loss: {:.6f}\n'.format(epoch + 1, batch_idx + 1, loss.data.cpu().numpy()))
 
         print('Epoch: {}, Loss: {:.6f}'.format(epoch + 1, loss.data.cpu().numpy()))
-        # f.write('Epoch: {}, Loss: {:.6f}\n'.format(epoch + 1, loss.data.cpu().numpy()))
 
-        if (epoch + 1) % 1 == 0:  # 每 5 次，保存一下解码的图片和原图片
+        if (epoch + 1) % 50 == 0:  # for every 50 epochs, save the label images and the corresponding output images
             pic = to_img(output.cpu().data)
             img = to_img(label.cpu().data)
-            if not os.path.exists('./conv_autoencoder'):
-                os.mkdir('./conv_autoencoder')
-            save_image(pic, './conv_autoencoder/decode_image_{}.png'.format(epoch + 1))
-            save_image(img, './conv_autoencoder/raw_image_{}.png'.format(epoch + 1))
+            save_image(pic, './result/extrapolation/octane-fixed-extra/decode_image_{}.png'.format(epoch + 1))
+            save_image(img, './result/extrapolation/octane-fixed-extra/raw_image_{}.png'.format(epoch + 1))
 
-    writer.close()
     torch.save(model.state_dict(), PATH_SAVE)
 
     # Load the trained model
     model.load_state_dict(torch.load(PATH_SAVE))
 
     # Create a DataLoader for the test set
-    test_data = SeqDataset(txt='./test_img_path.txt', transform=data_transforms)
+    test_data = SeqDataset(txt='./path/octane-fixed-extra-test-path.txt', transform=data_transforms)
     test_loader = DataLoader(test_data, shuffle=False, num_workers=8, batch_size=BATCH_SIZE, drop_last=True)
 
     # Use the model to predict
@@ -319,19 +287,9 @@ if __name__ == '__main__':
                 label_img = label_imgs[j, ...]
 
                 # Create a directory to save the images if it doesn't exist
-                output_dir = './test_results/output_image_{}/'.format(i + 1)
+                output_dir = './result/extrapolation/octane-fixed-extra/test/'
                 os.makedirs(output_dir, exist_ok=True)
 
                 # Save the output image and the corresponding label
                 save_image(output_img, os.path.join(output_dir, 'output_image_{}.png'.format(j + 1)))
                 save_image(label_img, os.path.join(output_dir, 'label_image_{}.png'.format(j + 1)))
-
-
-
-            # # Create a directory to save the images, if it doesn't exist
-            # if not os.path.exists('./test_results'):
-            #     os.mkdir('./test_results')
-
-            # # Save the output images and the corresponding labels
-            # save_image(output_imgs, './test_results/output_image_{}.png'.format(i + 1))
-            # save_image(label_imgs, './test_results/label_image_{}.png'.format(i + 1))

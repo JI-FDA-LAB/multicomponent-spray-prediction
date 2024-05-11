@@ -7,7 +7,7 @@ from torchvision import transforms
 from torchvision.transforms import Resize
 import multiprocessing
 
-PATH_SAVE = './model/lstm_model.t7'
+PATH_SAVE = './model/octane-fixed-extra-model.t7'
 SIDE = 512
 BATCH_SIZE = 72
 
@@ -29,7 +29,7 @@ if __name__ == '__main__':
 
     data_transforms = transforms.Compose( transform_list )
     # Create a DataLoader for the test set
-    test_data = SeqDataset(txt='./test_img_path.txt', transform=data_transforms)
+    test_data = SeqDataset(txt='./path/octane-fixed-extra-test-path.txt', transform=data_transforms)
     test_loader = DataLoader(test_data, shuffle=False, num_workers=8, batch_size=BATCH_SIZE, drop_last=True)
 
     # Use the model to predict
@@ -51,7 +51,7 @@ if __name__ == '__main__':
                 label_img = label_imgs[j, ...]
 
                 # Create a directory to save the images if it doesn't exist
-                output_dir = './test_results/output_image_{}/'.format(i + 1)
+                output_dir = './result/extrapolation/octane-fixed-extra/test/'.format(i + 1)
                 os.makedirs(output_dir, exist_ok=True)
 
                 # Save the output image and the corresponding label
