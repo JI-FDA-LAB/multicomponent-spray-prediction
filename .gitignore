@@ -8,11 +8,9 @@
 # ignore itself
 .gitignore
 
-# ignore other experiments
-*results/
-
 # ignore python files for creating sets and find the tip
 findCenter.py
 create_test_set.py
 threshold.py
 classify_images.py
+pre_process.py
