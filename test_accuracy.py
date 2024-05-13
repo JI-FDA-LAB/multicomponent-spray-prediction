@@ -45,27 +45,25 @@ def sort_key(line):
     number = int(filename.split('_')[-1].split('.')[0])  # Extract the number from the filename
     return number
 
-
-image_path = './result/interpolation/AEC_prediction'
-# image_path = './result/extrapolation/ABCDE_prediction'
+image_path = './result/extrapolation/octane-fixed/'
+# image_path = './result/interpolation/octane-fixed/ACB-test'
 calculate_parameters(image_path)
 
-lines = read_lines_from_file(os.path.join(image_path,'d.txt'))
+txt_path = os.path.join(image_path, 'd.txt')
+lines = read_lines_from_file(txt_path)
 
 # Sort the lines using the custom sorting function
 sorted_lines = sorted(lines, key=sort_key)
 
-file_path = os.path.join(image_path, 'sorted_d.txt')
-
-# Write the sorted lines back to a new text file
-with open(file_path, 'w') as file:
+# Rewrite the sorted lines back to d.txt file
+with open(txt_path, 'w') as file:
     file.writelines(sorted_lines)
 
 output_values = []
 label_values = []
 
 # Open the file and read line by line
-with open(file_path, 'r') as file:
+with open(txt_path, 'r') as file:
     for line in file:
         parts = line.split()
         d_value = float(parts[-1])

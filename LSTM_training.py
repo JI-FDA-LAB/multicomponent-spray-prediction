@@ -11,9 +11,12 @@ from torchvision.utils import save_image
 from torchvision.transforms import Resize
 
 BATCH_SIZE = 72
+# For extrapolation case, SEQ_SIZE = 4; for interpolation case, SEQ_SIZE = 2
 SEQ_SIZE = 4
-learning_rate = 0.001
+# SEQ_SIZE = 2
+learning_rate = 0.0001
 PATH_SAVE = './model/octane-fixed-extra-model.t7'
+# PATH_SAVE = './model/octane-fixed-inter-model.t7'
 SIDE = 512
 
 transform_list = [
@@ -28,8 +31,6 @@ def default_loader(path):
 
 def to_img(x):
     x = x.view(x.shape[0], 1, SIDE, SIDE) # Reshape to (batch_size, channels, height, width)
-    # Here x.shape[0] is used to maintain the original batch size when reshaping the tensor
-    # which allows the fcn to handle batches of images of any size.
     return x
 
 class SeqDataset(Dataset):
@@ -48,8 +49,7 @@ class SeqDataset(Dataset):
 
 
     def __getitem__(self, index):
-        ## Here we select a sequence randomly instead of in a fixed order
-        ## to shuffle the data, which is a common practice in ML.
+        ## Here we select a sequence randomly instead of in a fixed order to shuffle the data
         current_index = np.random.choice(range(0, self.num_samples))
         imgs_path = self.imgseqs[current_index].split()
         current_imgs = []
@@ -81,16 +81,13 @@ class EncoderMUG2d_LSTM(nn.Module):
         #1*SIDE*SIDE
         self.encoder = nn.Sequential(
             nn.Conv2d(input_nc, 32, 4,2,1), # 32 * 256 * 256
-            # This is a 2D convolutional layer. It takes an input with input_nc channels and applies 32 filters of size 4x4.
-            # The stride is 2 (meaning the filters move 2 pixels at a time), and the padding is 1 (meaning the input is zero-padded by 1 pixel on each side).
-            # The output of this layer will have 32 channels.
             nn.BatchNorm2d(32),
             nn.LeakyReLU(0.2, inplace=True),
-            #32*63*63
+
             nn.Conv2d(32, 64, 4, 2, 1), # 64 * 128 * 128
             nn.BatchNorm2d(64),
             nn.LeakyReLU(0.2, inplace=True),
-            #64*31*31
+
             nn.Conv2d(64, 128, 4, 2, 1), # 128 * 64 * 64
             nn.BatchNorm2d(128),
             nn.LeakyReLU(0.2, inplace=True),
@@ -134,21 +131,16 @@ class EncoderMUG2d_LSTM(nn.Module):
 
 
     def forward(self, x):
-        #x.shape [batchsize,seqsize,1,SIDE,SIDE]
+        # x.shape [batchsize,seqsize,1,SIDE,SIDE]
         B = x.size(0)
-        x = x.view(B * SEQ_SIZE, 1, SIDE, SIDE) #x.shape[batchsize*seqsize,1,SIDE,SIDE]
-        # [batchsize*seqsize, 1, SIDE, SIDE] -> [batchsize*seqsize, 1024,1,1]
+        x = x.view(B * SEQ_SIZE, 1, SIDE, SIDE) # x.shape[batchsize * seqsize,1,SIDE,SIDE]
+        # [batchsize*seqsize, 1, SIDE, SIDE] -> [batchsize * seqsize, 1024,1,1]
         x = self.encoder(x)
 
-        ## The rest of forward fcn does not depend on the image size
         #[batchsize * seqsize, 1024, 1, 1]-> [batchsize*seqsize, 1024]
         x = x.view(-1, 1024)
-        # [batchsize * seqsize, 1024]
         x = self.fc(x)
-        # [batchsize , seqsize ,1024]
         x = x.view(-1, SEQ_SIZE, x.size(1))
-        # -1 here is a placeholder. PyTorch will automatically fill in based on the size of
-        # the original tensor and the other dimensions specified.
         h0, c0 = self.init_hidden(x)
         output, (hn,cn) = self.lstm(x,(h0,c0))
         return hn
@@ -163,7 +155,6 @@ class DecoderMUG2d(nn.Module):
             nn.ReLU(inplace=True)
         )
         self.decoder = nn.Sequential(
-            # The size changes according to this rule: O = (I-1) * S - 2P + F ( in this case = 2*S)
             nn.ConvTranspose2d(1024, 512, 4, stride=2, padding=1), # 512*8*8
             nn.BatchNorm2d(512),
             nn.ReLU(True),
@@ -197,7 +188,7 @@ class DecoderMUG2d(nn.Module):
         )
     def forward(self, x):
         x = self.project(x) # the output of this layer is a 1D tensor (a flat tensor)
-        x = x.view(-1, 1024, 4, 4) # The line x = x.view(-1, 1024, 4, 4) reshapes the 1D tensor into a 4D tensor with the specified dimensions
+        x = x.view(-1, 1024, 4, 4) # reshape the 1D tensor into a 4D tensor with the specified dimensions
         decode = self.decoder(x)
         return decode
 
@@ -214,13 +205,13 @@ class net(nn.Module):
         return output
 
 if __name__ == '__main__':
-    train_data = SeqDataset(txt='./path/octane-fixed-extra-training-path.txt',transform=data_transforms)
+    train_data = SeqDataset(txt='./path/octane-fixed-extra-train-path.txt',transform=data_transforms)
+    # train_data = SeqDataset(txt='./path/octane-fixed-inter-train-path.txt',transform=data_transforms)
 
     train_loader = DataLoader(train_data, shuffle=True, num_workers=8, batch_size=BATCH_SIZE, drop_last=True)
 
     model = net()
     if torch.cuda.is_available(): # moves the model to the GPU if one is available.
-        # This allows the model to be trained faster
         model.cuda()
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
     loss_func = nn.MSELoss() # The mean squared error loss is used.
@@ -230,14 +221,13 @@ if __name__ == '__main__':
     print(inputs.size())
     print(label.size())
 
-    for epoch in range(300):
+    for epoch in range(1000):
         __loss = 0
-        print('epoch {}'.format(epoch + 1))
         train_loss = []
         train_acc = 0.
         for batch_idx, (batch_x, batch_y) in enumerate(train_loader):
 
-            inputs, label = Variable(batch_x), Variable(batch_y)
+            inputs, label = Variable(batch_x).cuda(), Variable(batch_y).cuda()
             # This line wraps the input and target data in Variable objects.
             # This is a requirement for computation with PyTorch.
 
@@ -249,47 +239,8 @@ if __name__ == '__main__':
             optimizer.step()
 
             __loss += loss.item()
-            print('Epoch: {}, Batch: {}, Loss: {:.6f}'.format(epoch + 1, batch_idx + 1, loss.data.cpu().numpy()))
 
         print('Epoch: {}, Loss: {:.6f}'.format(epoch + 1, loss.data.cpu().numpy()))
 
-        if (epoch + 1) % 50 == 0:  # for every 50 epochs, save the label images and the corresponding output images
-            pic = to_img(output.cpu().data)
-            img = to_img(label.cpu().data)
-            save_image(pic, './result/extrapolation/octane-fixed-extra/decode_image_{}.png'.format(epoch + 1))
-            save_image(img, './result/extrapolation/octane-fixed-extra/raw_image_{}.png'.format(epoch + 1))
-
+    # Save the trained LSTM model and use it to make predictions in 'predict.py'
     torch.save(model.state_dict(), PATH_SAVE)
-
-    # Load the trained model
-    model.load_state_dict(torch.load(PATH_SAVE))
-
-    # Create a DataLoader for the test set
-    test_data = SeqDataset(txt='./path/octane-fixed-extra-test-path.txt', transform=data_transforms)
-    test_loader = DataLoader(test_data, shuffle=False, num_workers=8, batch_size=BATCH_SIZE, drop_last=True)
-
-    # Use the model to predict
-    model.eval()  # Set the model to evaluation mode
-    with torch.no_grad():  # Do not calculate gradients to save memory
-        for i, (inputs, labels) in enumerate(test_loader):
-            inputs = Variable(inputs)
-            labels = Variable(labels)
-            outputs = model(inputs)
-            # Here, outputs are your predictions
-
-            # Convert the outputs and labels to images
-            output_imgs = to_img(outputs.cpu().data)
-            label_imgs = to_img(labels.cpu().data)
-
-            # Save each output image and label individually
-            for j in range(output_imgs.size(0)):
-                output_img = output_imgs[j, ...]
-                label_img = label_imgs[j, ...]
-
-                # Create a directory to save the images if it doesn't exist
-                output_dir = './result/extrapolation/octane-fixed-extra/test/'
-                os.makedirs(output_dir, exist_ok=True)
-
-                # Save the output image and the corresponding label
-                save_image(output_img, os.path.join(output_dir, 'output_image_{}.png'.format(j + 1)))
-                save_image(label_img, os.path.join(output_dir, 'label_image_{}.png'.format(j + 1)))

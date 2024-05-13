@@ -30,10 +30,10 @@ def calculate_d(image):
 
 # Calculate the relative error between the input images and the label image
 # The commented line is for extrapolation case
-def calculate_parameters(input_path, num_images=3):
-# def calculate_parameters(input_path, num_images=5):
-    errors = [[] for _ in range(num_images - 1)]
 
+def calculate_parameters(input_path, num_images=5):
+# def calculate_parameters(input_path, num_images=3):
+    errors = [[] for _ in range(num_images - 1)]
     with open(os.path.join(input_path, "d.txt"), "w") as file:
         subfolders = sorted(os.listdir(input_path))
         for subfolder in subfolders:
@@ -53,7 +53,6 @@ def calculate_parameters(input_path, num_images=3):
     for i in range(len(mean_relative_errors)):
         print(f"Similarity for {i + 1} & {num_images}: {100 - mean_relative_errors[i] * 100}%")
 
-
-image_path = './dataset/sample_test/interpolation/AEC-test-set'
-# image_path = './dataset/sample_test/extrapolation/ABCDE-test-set'
+image_path = './dataset/sample_test/extrapolation/octane-fixed/'
+# image_path = './dataset/sample_test/interpolation/AEC-test-set-threshold/'
 calculate_parameters(image_path)
