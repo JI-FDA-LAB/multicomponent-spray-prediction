@@ -1,7 +1,7 @@
 # Deep learning framework for multicomponent-spray-prediction
 This repo presents a deep learning framework, the Encoder-LSTM-Decoder structure, for spray cross-pattern prediction from the work *"Prediction of Spray Collapse Patterns on Different Fuel Mixture Compositions Based on Deep Learning Framework"*. It is realized in Python. This work indicated that the proposed framework could efficiently capture the underlying correlations between varying fuel mixture compositions and their resultant spray patterns given certain environmental parameters. This predictive capability facilitates the identification of optimal mixture states for achieving superior fuel atomization quality.
 
-The source code for our model training, predicting, and testing is published in this GitHub repo. The sample dataset is uploaded in this repo as well. If you are interested in further expanding our idea to other pattern datasets, please cite our coming paper.
+The source code for our model training, predicting, and evaluating is published in this GitHub repo. The sample dataset is uploaded in this repo as well. If you are interested in further expanding our idea to other pattern datasets, please cite our coming paper.
 
 ## Engine Parameters
 
@@ -36,21 +36,20 @@ All the images in the dataset are of size (1, 768, 768) and have been thresholde
       - ACB-test-set-threshold
       - CED-test-set-threshold (each of these three folders contains 72 subfolders with 3 images)
 
-| **Item**               | **Value**                      |
-|------------------------|--------------------------------|
-| **Hyperparameters**    |                                |
-| Batch Size             | 72                             |
-| Learning Rate (lr)     | 0.001                          |
-| Epoch                  | 500                            |
-| **Dataset**            |                                |
-| All Samples            | 4320                           |
-| Training Set           | 80% (3456 in total)            |
-| Test Set               | 20% (864 in total)             |
-|                        | **Interpolation** | **Extrapolation** |
-| Training Sequences     | 288                            | 288 |
-| Test Sequences         | 72                             | 72  |
-| Images in a Sequence   | 3                              | 5   |
+| **Category** | **Item**                | **Value**            |              |
+|--------------|-------------------------|----------------------|--------------|
+| **Hyperparameters**| Batch Size        | 72                   |              |
+|              | Learning Rate (lr)      | 0.001                |              |
+|              | Epoch                   | 1000                 |              |
+| **Dataset**  | All Samples (number of images)| 4320           |              |
+|              | Training Set            | 80% (3456 in total)  |              |
+|              | Test Set                | 20% (864 in total)   |              |
+|              |                         | **Interpolation**    | **Extrapolation**  |
+|              | Training Sequences      | 288                  | 288          |
+|              | Test Sequences          | 72                   | 72           |
+|              | Images in a Sequence    | 3                    | 5            |
 
+**Note: we only publish the octane-fixed case in this repo. Other data including pentane-fixed and decane-fixed cases could be available on request. It is also encouraged to test the framework on other fuel mixture composition scenarios**
 
 ### Training
 Training source code is arranged using Python:
@@ -62,5 +61,27 @@ python ./LSTM_training.py
 Predicting source code is arranged using Python:
 ```
 python ./predict.py
+```
 
-###
+### Evaluation
+The codes for evaluating the similarity of a test set and the accuracy of the result are arranged using Python:
+```
+python ./test_similarity.py
+python ./test_accuracy.py
+```
+
+### Result
+The results of the octane-fixed interpolated/extrapolated prediction are published in the folder *result*. For each prediction result, we present:
+- Label images and output images (*.png)
+- The plume-to-tip distance *d* of every spray pattern (d.txt)
+
+### Citation
+
+### Examples
+./result/extrapolation/octane-fixed/label_image_43.png
+![Sample label](./result/extrapolation/octane-fixed/label_image_43.png)
+
+./result/extrapolation/octane-fixed/output_image_43.png
+![Sample output](./result/extrapolation/octane-fixed/output_image_43.png)
+
+[./result/extrapolation/octane-fixed/d.txt](./result/extrapolation/octane-fixed/d.txt)
