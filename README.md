@@ -1,11 +1,10 @@
 # Deep learning framework for multicomponent-spray-prediction
+*Accepted by ASME ICEF 2024*
+
 This repo presents a deep learning framework, the Encoder-LSTM-Decoder structure, for spray cross-pattern prediction from the work *"Prediction of Spray Collapse Patterns on Different Fuel Mixture Compositions Based on Deep Learning Framework"*. It is realized in Python. This work indicated that the proposed framework could efficiently capture the underlying correlations between varying fuel mixture compositions and their resultant spray patterns given certain environmental parameters. This predictive capability facilitates the identification of optimal mixture states for achieving superior fuel atomization quality.
 
 The source code for our model training, predicting, and evaluating is published in this GitHub repo. The sample dataset is uploaded in this repo as well. If you are interested in further expanding our idea to other pattern datasets, please cite our coming paper.
 
-## Engine Parameters
-
-## Computational Resources
 
 ## Repo Guidelines
 The sample dataset, result, and the well-trained models are published but could be available on request.
