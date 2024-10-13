@@ -77,10 +77,13 @@ The results of the octane-fixed interpolated/extrapolated prediction are publish
 ### Citation
 
 ### Examples
+
 ./result/extrapolation/octane-fixed/label_image_43.png
+
 ![Sample label](./result/extrapolation/octane-fixed/label_image_43.png)
 
 ./result/extrapolation/octane-fixed/output_image_43.png
+
 ![Sample output](./result/extrapolation/octane-fixed/output_image_43.png)
 
 [./result/extrapolation/octane-fixed/d.txt](./result/extrapolation/octane-fixed/d.txt)
